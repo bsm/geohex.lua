@@ -78,5 +78,12 @@ context('geohex', function()
     end
   end)
 
+  test('decode fail-safe', function()
+    assert_nil(M.decode(nil))
+    assert_nil(M.decode(""))
+    assert_nil(M.decode("INVALID"))
+    assert_nil(M.decode("AB-1"))
+  end)
+
 end)
 

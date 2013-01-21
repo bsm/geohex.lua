@@ -32,6 +32,21 @@ local normalize = function(lon)
   return lon
 end
 
+-- @return [string] decodes given `code` to a sequence of digits
+local digitize = function(code)
+  local n1, n2 = H.index[code:sub(1, 1)], H.index[code:sub(2, 2)]
+  if not n1 or not n2 then
+    return nil
+  end
+
+  local digits = tostring(n1* 30 + n2) .. code:sub(3)
+  for _=#digits,#code do
+    digits = "0" .. digits
+  end
+
+  return digits
+end
+
 -- @return [number] normalized easting for a given `lon`
 local easting = function(lon)
   return normalize(lon) * H.base / 180
@@ -87,18 +102,19 @@ end
 
 -- @return [table] point record containing { x = INT, y = INT, unit = TABLE }
 function M.parse(code)
-  local x, y = 0, 0
-  local len  = #code
-  local str  = H.index[code:sub(1, 1)] * 30 + H.index[code:sub(2, 2)]
+  if type(code) ~= "string" then return nil end
 
-  str  = tostring(str) .. code:sub(3)
-  for _= #str,len do str = "0" .. str end
+  local x, y   = 0, 0
+  local len    = #code
+  local digits = digitize(code)
+  if not digits then return nil end
 
-  local idx = 0
-  for n10 in str:gmatch("[^.]") do
+  local pos = 0
+  for n10 in digits:gmatch("[^.]") do
     n10 = tonumber(n10)
-    pow = 3^(len-idx)
-    idx = idx + 1
+    if not n10 then return nil end
+    pow = 3^(len-pos)
+    pos = pos + 1
 
     local n3 = ""
     while n10 > 0 do
@@ -170,6 +186,10 @@ end
 -- @return [table] record containing { lat = FLOAT, lon = FLOAT, level = INT }
 function M.decode(...)
   local point = M.parse(...)
+  if not point then
+    return nil
+  end
+
   local ne    = point_to_ne(point)
   local lat, lon
 
