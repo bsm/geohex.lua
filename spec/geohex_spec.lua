@@ -2,28 +2,11 @@ require 'spec.spec_helper'
 
 context('geohex', function()
 
-  local round = function(num)
-    return math.floor(num * 1000 + 0.5) / 1000
+  local round = function(num, prec)
+    if not prec then prec = 3 end
+    return math.floor(num * 10^prec + 0.5) / 10^prec
   end
   local M = require 'geohex'
-
-  test('northing', function()
-    assert_equal(round(M.northing(51.2)), 6656747.948)
-    assert_equal(round(M.northing("51.2")), 6656747.948)
-    assert_equal(round(M.northing(38.89)), 4705927.242)
-    assert_equal(round(M.northing(-2.7315738409448347)), -304192.664)
-    assert_equal(round(M.northing(82.27244849463305)), 17189491.375)
-  end)
-
-  test('easting', function()
-    assert_equal(round(M.easting(-0.1)), -11131.949)
-    assert_equal(round(M.easting("-0.1")), -11131.949)
-    assert_equal(round(M.easting(-77.04)), -8576053.57)
-    assert_equal(round(M.easting(-182)), 19814869.358)
-    assert_equal(round(M.easting(240)), -13358338.893)
-    assert_equal(round(M.easting(178.9405262207031)), 19919568.258)
-    assert_equal(round(M.easting(172.87607309570308)), 19244476.425)
-  end)
 
   test('unit', function()
     local u7 = M.unit(7)
@@ -51,11 +34,47 @@ context('geohex', function()
     assert_equal(point.unit.level, 0)
   end)
 
+  test('parse', function()
+    local point = M.parse("GI")
+    assert_equal(point.x, -5)
+    assert_equal(point.y, 4)
+    assert_equal(point.unit.level, 0)
+
+    local point = M.parse("CI")
+    assert_equal(point.x, -5)
+    assert_equal(point.y, -11)
+    assert_equal(point.unit.level, 0)
+
+    local point = M.parse("TK")
+    assert_equal(point.x, 2)
+    assert_equal(point.y, 11)
+    assert_equal(point.unit.level, 0)
+
+    local point = M.parse("PZ4253332")
+    assert_equal(point.x, 6317)
+    assert_equal(point.y, 2473)
+    assert_equal(point.unit.level, 7)
+  end)
+
   test('encode', function()
-    for line in io.lines("spec/cases.csv") do
+    for line in io.lines("spec/encode.csv") do
       local case = {}
       for t in string.gmatch(line, "[^,]+") do case[#case+1] = t end
-      assert_equal(M.encode(case[1], case[2], case[3]), case[4])
+
+      local encoded = M.encode(case[1], case[2], case[3])
+      assert_equal(encoded, case[4])
+    end
+  end)
+
+  test('decode', function()
+    for line in io.lines("spec/decode.csv") do
+      local case = {}
+      for t in string.gmatch(line, "[^,]+") do case[#case+1] = t end
+
+      local result = M.decode(case[1])
+      result.lat = round(result.lat, 7)
+      result.lon = round(result.lon, 7)
+      assert_tables(result, { lat = round(case[2], 7), lon = round(case[3], 7), level = tonumber(case[4]) })
     end
   end)
 
