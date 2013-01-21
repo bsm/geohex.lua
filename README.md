@@ -5,8 +5,11 @@ GeoHex V3 implementation in Lua
 ## Quick Start
 
     local geohex = require 'geohex'
-    geohex.encode(35.647401, 139.716911, 1)
-    -- "132KpuG"
+    geohex.encode(35.647401, 139.716911, 6)
+    -- "XM488541"
+
+    geohex.decode("XM488541")
+    -- { lon = 139.7256515775, lat = 35.63992106909, level = 6}
 
 ## Running tests
 
